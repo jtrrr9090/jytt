@@ -1,0 +1,36 @@
+import requests
+from flask import Flask, request, Response
+from urllib.parse import urlparse
+
+app = Flask(__name__)
+
+# Function to handle GET requests and forward them to the destination
+@app.route('/', defaults={'path': ''}, methods=['GET'])
+@app.route('/<path:path>', methods=['GET'])
+def proxy_get(path):
+    target_url = f"https://{path}"
+    if request.args.get('url'):
+        target_url = request.args['url']
+
+    # Forward the request to the target URL
+    resp = requests.get(target_url, headers=request.headers, params=request.args)
+
+    # Return the response content from the target URL
+    return Response(resp.content, status=resp.status_code, headers=resp.headers.items())
+
+# Function to handle POST requests and forward them to the destination
+@app.route('/', defaults={'path': ''}, methods=['POST'])
+@app.route('/<path:path>', methods=['POST'])
+def proxy_post(path):
+    target_url = f"https://{path}"
+    if request.args.get('url'):
+        target_url = request.args['url']
+
+    # Forward the request to the target URL with the same data
+    resp = requests.post(target_url, headers=request.headers, data=request.data, params=request.args)
+
+    # Return the response content from the target URL
+    return Response(resp.content, status=resp.status_code, headers=resp.headers.items())
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
